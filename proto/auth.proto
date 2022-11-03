@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+package api.auth;
+
+service Auth {
+    rpc SendCodePhone(SendCodePhoneRequest) returns (SendCodePhoneResponse);
+    // rpc SendCodeEmail(SendCodeEmailRequest) returns (SendCodeEmailResponse);
+    rpc SignInPhone(SignInPhoneRequest) returns (SignInPhoneResponse);
+    // rpc SignInEmail(SignInEmailRequest) returns (SignInEmailResponse);
+}
+
+
+message SendCodePhoneRequest {
+    int64 phone = 1;
+}
+
+message SendCodePhoneResponse {
+    SendCodeResultResource result = 1;
+}
+
+
+message SendCodeEmailRequest {
+    string email = 1;
+}
+
+message SendCodeEmailResponse {
+    SendCodeResultResource result = 1;
+}
+
+
+message SignInPhoneRequest {
+    int64 phone = 1;
+    int64 code = 2;
+}
+
+message SignInPhoneResponse {
+    SignInResultResource result = 1;
+}
+
+
+message SignInEmailRequest {
+    string email = 1;
+    int64 code = 2;
+}
+
+message SignInEmailResponse {
+    SignInResultResource result = 1;
+}
+
+
+message SendCodeResultResource {
+    oneof payload {
+        Success success = 1;
+        Timeout timeout = 2;
+        Fail fail = 3;
+        Retry retry = 4;
+    }
+
+    message Success {
+        int64 timeout_until = 1;
+        int64 valid_until = 2;
+    }
+
+    message Timeout {
+        int64 timeout_until = 1;
+    }
+
+    message Fail {
+    }
+
+    message Retry {
+    }
+}
+
+message SignInResultResource {
+    oneof payload {
+        Success success = 1;
+        Absent absent = 2;
+        Fail fail = 3;
+        Retry retry = 4;
+    }
+
+    message Success {
+        string refresh_token = 1;
+        int64 refresh_expires_at = 2;
+        string access_token = 3;
+        int64 access_expires_at = 5;
+    }
+
+    message Absent {
+    }
+
+    message Fail {
+        int32 attempts_left = 1;
+    }
+
+    message Retry {
+    }
+}

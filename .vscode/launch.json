@@ -1,0 +1,45 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'recoining-api-core'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=recoining-api-core",
+                    "--package=recoining-api-core"
+                ],
+                "filter": {
+                    "name": "recoining-api-core",
+                    "kind": "bin"
+                }
+            },
+            "args": ["-config", "config.local.json"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'recoining-api-core'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=recoining-api-core",
+                    "--package=recoining-api-core"
+                ],
+                "filter": {
+                    "name": "recoining-api-core",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
