@@ -1,25 +1,47 @@
-use std::sync::{Arc, Mutex};
+use std::{sync::{Arc, Mutex}, error::Error};
+
+use uuid::Uuid;
 
 use crate::storage::{RepositoryFactory, id_generator::IdGenerator};
 
-use super::{codes::CodeService, users::UserService, tokens::TokenService};
+use super::{codes::CodeService, users::UserService, tokens::{TokenService, TokensState}, ServicesConfig};
 
 #[derive(Debug)]
 pub struct ServiceFactory {
+    config: ServicesConfig,
     id_generator: Arc<Mutex<IdGenerator>>,
+    tokens_state: Arc<TokensState>,
     repository_factory: RepositoryFactory,
 }
 
 impl ServiceFactory {
-    pub fn new(repository_factory: RepositoryFactory) -> Self {
-        Self {
-            id_generator: Arc::new(Mutex::new(IdGenerator::new(0))),
+    pub fn new(
+        config: ServicesConfig,
+        repository_factory: RepositoryFactory
+    ) -> Result<Self, Box<dyn Error>> {
+        let instance_id = Uuid::new_v4();
+
+        let result = Self {
+            id_generator: Arc::new(
+                Mutex::new(
+                    IdGenerator::new(
+                        (instance_id.as_u128() % 0x3ff) as i64
+                    )
+                )
+            ),
+            tokens_state: Arc::new(TokensState::new(instance_id, &config.tokens)?),
             repository_factory: repository_factory,
-        }
+            config,
+        };
+
+        Ok(result)
     }
 
     pub fn code(&self) -> CodeService {
-        CodeService::new(self.repository_factory.phone_code())
+        CodeService::new(
+            &self.config.codes,
+            self.repository_factory.phone_code(),
+        )
     }
 
     pub fn user(&self) -> UserService {
@@ -31,7 +53,8 @@ impl ServiceFactory {
 
     pub fn token(&self) -> TokenService {
         TokenService::new(
-            self.repository_factory.user_token(),
+            Arc::clone(&self.tokens_state),
+            self.repository_factory.user_token(),    
         )  
     }
 }

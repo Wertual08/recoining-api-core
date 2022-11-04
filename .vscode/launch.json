@@ -19,7 +19,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["-config", "config.local.json"],
+            "args": ["-config", "options/config.local.json"],
             "cwd": "${workspaceFolder}"
         },
         {

@@ -1,8 +1,8 @@
-use std::{env, fs::File};
+use std::{env, fs::File, error::Error};
 
 use serde::{Deserialize, Serialize};
 
-use crate::storage::ScyllaConfig;
+use crate::{storage::ScyllaConfig, domain::ServicesConfig};
 
 use super::ServerConfig;
 
@@ -10,10 +10,11 @@ use super::ServerConfig;
 pub struct Config {
     pub server: ServerConfig,
     pub scylla: ScyllaConfig,
+    pub services: ServicesConfig,
 }
 
 impl Config {
-    pub fn new() -> Self {
+    pub fn new() -> Result<Self, Box<dyn Error>> {
         let args: Vec<String> = env::args().collect();
 
         let mut config_path = None;
@@ -32,17 +33,19 @@ impl Config {
             i += 1;   
         }
 
-        if let Some(path) = config_path {
-            serde_json::from_reader(File::open(path).unwrap()).unwrap()
+        let result = if let Some(path) = config_path {
+            serde_json::from_reader(File::open(path)?)?
         }
         else {
             if let Ok(file) = File::open("config.json") {
-                serde_json::from_reader(file).unwrap()
+                serde_json::from_reader(file)?
             }
             else {
                 panic!("Config not found")
             }
-        }
+        };
+
+        Ok(result)
     }
 
     pub fn serialize(&self) -> String {

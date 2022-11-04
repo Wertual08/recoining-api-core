@@ -96,13 +96,22 @@ impl Auth for AuthService {
                 if let Some(id) = id_option {
                     let token_service = self.service_factory.token();
 
-                    let token = token_service.create_refresh(id).await.status_result()?;
+                    let (refresh_token, refresh_expires_at) = token_service
+                        .create_refresh(id)
+                        .await
+                        .status_result()?;
+
+                    let (access_token, access_expires_at) = token_service
+                        .create_access(id)
+                        .await
+                        .status_result()?;
 
                     Payload::Success(Success {
-                        refresh_token: token.refresh_token,
-                        refresh_expires_at: token.refresh_expires_at,
-                        access_token: token.access_token,
-                        access_expires_at: token.access_expires_at,
+                        user_id: id,
+                        refresh_token: refresh_token,
+                        refresh_expires_at: refresh_expires_at,
+                        access_token: access_token,
+                        access_expires_at: access_expires_at,
                     })
                 }
                 else {

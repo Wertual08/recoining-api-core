@@ -2,25 +2,26 @@ use std::{sync::Arc, error::Error, time::{SystemTime, UNIX_EPOCH}};
 
 use crate::storage::phone_codes::{PhoneCodeRepository, PhoneCodeDto};
 
-use super::{CodeSendModel, CodeAttemptModel};
+use super::{CodeSendModel, CodeAttemptModel, CodesConfig};
 
 pub struct CodeService {
-    code_attemtps_phone: i16,
-    code_max_phone: i64,
-    code_timeout_phone: i64,
-    code_expiration_phone: i64,
+    attemtps_phone: i16,
+    max_phone: i64,
+    timeout_phone: i64,
+    expiration_phone: i64,
     phone_code_repository: Arc<dyn PhoneCodeRepository + Sync + Send>,
 }
 
 impl CodeService {
     pub fn new(
+        config: &CodesConfig,
         phone_code_repository: Arc<dyn PhoneCodeRepository + Sync + Send>,
     ) -> Self {
         Self {
-            code_attemtps_phone: 3,
-            code_max_phone: 1,
-            code_timeout_phone: 60000,
-            code_expiration_phone: 300000,
+            attemtps_phone: config.attemtps_phone,
+            max_phone: config.max_phone,
+            timeout_phone: config.timeout_phone,
+            expiration_phone: config.expiration_phone,
             phone_code_repository,
         }
     }
@@ -34,7 +35,7 @@ impl CodeService {
         let dto_option = self.phone_code_repository.find(phone).await?;
 
         let mut dto = if let Some(dto) = dto_option {
-            let until = dto.created_at + self.code_timeout_phone;
+            let until = dto.created_at + self.timeout_phone;
             if until > now {
                 return Ok(CodeSendModel::Timeout(until));
             }
@@ -48,8 +49,8 @@ impl CodeService {
         else {
             PhoneCodeDto::new(
                 phone, 
-                self.code_max_phone, 
-                (self.code_expiration_phone / 1000) as i32,
+                self.max_phone, 
+                (self.expiration_phone / 1000) as i32,
             )
         };
 
@@ -62,8 +63,8 @@ impl CodeService {
         // TODO: Send the code
 
         let result = CodeSendModel::Success(
-            now + self.code_timeout_phone, 
-            now + self.code_expiration_phone,
+            now + self.timeout_phone, 
+            now + self.expiration_phone,
         );
 
         Ok(result)
@@ -84,7 +85,7 @@ impl CodeService {
 
         dto.attempts += 1;
 
-        if dto.attempts > self.code_attemtps_phone {
+        if dto.attempts > self.attemtps_phone {
             if !self.phone_code_repository.create(&dto).await? {
                 return Ok(CodeAttemptModel::Retry)
             }
@@ -100,6 +101,6 @@ impl CodeService {
             return Ok(CodeAttemptModel::Retry)
         }
 
-        Ok(CodeAttemptModel::Fail(self.code_attemtps_phone - dto.attempts))
+        Ok(CodeAttemptModel::Fail(self.attemtps_phone - dto.attempts))
     }
 }
