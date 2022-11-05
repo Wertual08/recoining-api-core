@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package api.auth;
+package api_core.auth;
 
 service Auth {
     rpc SendCodePhone(SendCodePhoneRequest) returns (SendCodePhoneResponse);

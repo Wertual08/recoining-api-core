@@ -7,6 +7,7 @@ pub struct UserDto {
     pub phone: i64,
     pub email: String,
     pub login: String,
+    pub avatar: String,
     pub balance: HashMap<String, BigDecimal>,
 }
 
@@ -17,6 +18,7 @@ impl UserDto {
             phone,
             email: String::new(),
             login: String::new(),
+            avatar: String::new(),
             balance: HashMap::new(),
         }
     }

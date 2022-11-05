@@ -10,6 +10,7 @@ create table recoining.users (
     phone bigint,
     email text,
     login text,
+    avatar text,
     balance map<text, decimal>
 );
 
@@ -37,22 +38,32 @@ create table recoining.user_tokens (
     primary key (user_id, id)
 );
 
+create table recoining.registries (
+    id bigint primary key,
+    current_batch bigint,
+    current_sequence bigint
+);
+
 create table recoining.transactions (
-    former_user_id bigint,
-    second_user_id bigint,
-    month bigint,
-    id bigint,
-    type int,
+    registry_id bigint,
+    pack bigint,
+    sequence smallint,
+    created_at bigint,
+    type smallint,
     amount decimal,
     currency text,
     label text,
     description text,
-    primary key ((former_user_id, second_user_id, month), id)
+    hash blob,
+    state tinyint,
+    primary key ((registry_id, pack), sequence)
 );
 
-create table recoining.user_p2p_accounts (
-    former_user_id bigint,
-    second_user_id bigint,
+create table recoining.user_registries (
+    user_id bigint,
+    registry_id bigint,
     balance map<text, decimal>,
-    primary key ((former_user_id, second_user_id))
+    primary key (user_id, registry_id)
 );
+
+create index on recoining.user_registries(registry_id);

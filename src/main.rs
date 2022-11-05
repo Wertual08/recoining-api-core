@@ -1,4 +1,5 @@
 mod config;
+mod logging;
 mod grpc;
 mod storage;
 mod domain;
@@ -7,42 +8,59 @@ mod migrations;
 use std::sync::Arc;
 
 use config::Config;
-use grpc::auth_service::{AuthService, AuthServer};
+use grpc::{AuthGrpcService, AuthServer};
 use storage::RepositoryFactory;
 use tonic::transport::Server;
 
 use crate::domain::ServiceFactory;
+use crate::grpc::{UsersGrpcService, UsersServer};
+use crate::logging::Logger;
 use crate::storage::ScyllaContext;
 use crate::migrations::migrate;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("Reading config...");
+    print!("Reading config...");
     let config = Config::new()?;
-    println!("Starting with config: {}", config.serialize());
+    println!(" DONE: {}", config.serialize());
 
-    println!("Connectiong to database...");
+    print!("Connecting to database...");
     let scylla_context = Arc::new(ScyllaContext::new(&config.scylla).await?);
-    println!("Database connection established");
+    println!(" DONE");
 
     migrate(&scylla_context, &String::from("migrations")).await?;
 
-    println!("Initializing repositories...");
+    print!("Initializing logger...");
+    let logger = Arc::new(Logger::new());
+    println!(" DONE");
+
+    print!("Initializing repositories...");
     let repository_factory = RepositoryFactory::new(&scylla_context).await?;
-    println!("Repositories initialization complete");
+    println!(" DONE");
 
-    println!("Initializing services...");
+    print!("Initializing services...");
     let service_factory = Arc::new(ServiceFactory::new(config.services, repository_factory)?);
-    println!("Services initialization complete");
+    println!(" DONE");
 
-    let auth = AuthService::new(Arc::clone(&service_factory));
+    print!("Initializing grpc services...");
+    let auth = AuthGrpcService::new(
+        Arc::clone(&logger),
+        Arc::clone(&service_factory),
+    );
+    let users = UsersGrpcService::new(
+        Arc::clone(&logger),
+        Arc::clone(&service_factory),
+    );
+    println!(" DONE");
 
     println!("Running server...");
     Server::builder()
         .add_service(AuthServer::new(auth))
+        .add_service(UsersServer::new(users))
         .serve(config.server.host.parse().unwrap())
         .await?;
-    println!("Server is shut down");
+
+    println!("Exiting...");
 
     Ok(())
 }

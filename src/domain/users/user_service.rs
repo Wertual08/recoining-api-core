@@ -2,6 +2,8 @@ use std::{sync::{Arc, Mutex}, error::Error};
 
 use crate::storage::{id_generator::{IdGenerator}, users::{UserRepository, UserDto}};
 
+use super::UserModel;
+
 pub struct UserService {
     id_generator: Arc<Mutex<IdGenerator>>,
     user_repository: Arc<dyn UserRepository + Sync + Send>,
@@ -38,4 +40,22 @@ impl UserService {
             }
         }
     }  
+
+    pub async fn find_id(&self, id: i64) -> Result<Option<UserModel>, Box<dyn Error>> {
+        let dto_option = self.user_repository.find_id(id).await?;
+
+        Ok(dto_option.map(|dto| UserModel::from(dto)))
+    }
+
+    pub async fn find_phone(&self, phone: i64) -> Result<Option<UserModel>, Box<dyn Error>> {
+        let dto_option = self.user_repository.find_phone(phone).await?;
+
+        Ok(dto_option.map(|dto| UserModel::from(dto)))
+    }
+
+    pub async fn find_email(&self, email: &String) -> Result<Option<UserModel>, Box<dyn Error>> {
+        let dto_option = self.user_repository.find_email(email).await?;
+
+        Ok(dto_option.map(|dto| UserModel::from(dto)))
+    }
 }

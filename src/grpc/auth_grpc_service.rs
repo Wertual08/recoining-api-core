@@ -1,11 +1,12 @@
 pub mod api_auth {
-    tonic::include_proto!("api.auth");
+    tonic::include_proto!("api_core.auth");
 }
 
-use std::{sync::Arc, error::Error};
+pub use api_auth::auth_server::AuthServer;
 
-pub use api_auth::auth_server::{Auth, AuthServer};
+use std::sync::Arc;
 use api_auth::{
+    auth_server::Auth, 
     SignInPhoneRequest, 
     SignInPhoneResponse, 
     SignInResultResource, 
@@ -16,25 +17,30 @@ use api_auth::{
 };
 use tonic::{Request, Response, Status};
 
-use crate::domain::{ServiceFactory, codes::{CodeSendModel, CodeAttemptModel}};
+use crate::{domain::{ServiceFactory, codes::{CodeSendModel, CodeAttemptModel}}, logging::{StatusResult, Logger}};
 
 use self::api_auth::{SendCodePhoneResponse, SendCodePhoneRequest, SendCodeResultResource, send_code_result_resource, sign_in_result_resource::{Fail, Absent, Retry}};
 
 #[derive(Debug)]
-pub struct AuthService {
+pub struct AuthGrpcService {
+    logger: Arc<Logger>,
     service_factory: Arc<ServiceFactory>,
 }
 
-impl AuthService {
-    pub fn new(service_factory: Arc<ServiceFactory>) -> Self {
+impl AuthGrpcService {
+    pub fn new(
+        logger: Arc<Logger>,
+        service_factory: Arc<ServiceFactory>,
+    ) -> Self {
         Self {
+            logger,
             service_factory,
         }
     }
 }
 
 #[tonic::async_trait]
-impl Auth for AuthService {
+impl Auth for AuthGrpcService {
     async fn send_code_phone(&self, request: Request<SendCodePhoneRequest>) -> Result<Response<SendCodePhoneResponse>, Status> {
         let request_data = request.get_ref();
         
@@ -43,7 +49,7 @@ impl Auth for AuthService {
         let result = service
             .send_phone(request_data.phone)
             .await
-            .status_result()?;
+            .consume_error(&self.logger)?;
 
         let payload = match result {
             CodeSendModel::Success(timeout, valid) => send_code_result_resource::Payload::Success(
@@ -85,13 +91,16 @@ impl Auth for AuthService {
         let attempt_result = code_service.attempt_phone(
             request_data.phone, 
             request_data.code,
-        ).await.status_result()?;
+        ).await.consume_error(&self.logger)?;
 
         let payload = match attempt_result {
             CodeAttemptModel::Success => {
                 let user_service = self.service_factory.user();
 
-                let id_option = user_service.get_id_phone(request_data.phone).await.status_result()?;
+                let id_option = user_service
+                    .get_id_phone(request_data.phone)
+                    .await
+                    .consume_error(&self.logger)?;
 
                 if let Some(id) = id_option {
                     let token_service = self.service_factory.token();
@@ -99,12 +108,12 @@ impl Auth for AuthService {
                     let (refresh_token, refresh_expires_at) = token_service
                         .create_refresh(id)
                         .await
-                        .status_result()?;
+                        .consume_error(&self.logger)?;
 
                     let (access_token, access_expires_at) = token_service
                         .create_access(id)
                         .await
-                        .status_result()?;
+                        .consume_error(&self.logger)?;
 
                     Payload::Success(Success {
                         user_id: id,
@@ -135,18 +144,5 @@ impl Auth for AuthService {
                 }
             )
         )
-    }
-}
-
-trait Statusable<T> {
-    fn status_result(self) -> Result<T, Status>;
-}
-
-impl<T> Statusable<T> for Result<T, Box<dyn Error>> {
-    fn status_result(self) -> Result<T, Status> {
-        self.map_err(|err| {
-            eprintln!("{:?}", err);
-            Status::internal(err.to_string())
-        })
     }
 }

@@ -1,7 +1,7 @@
 use std::{sync::Arc, error::Error, collections::HashMap};
 
 use bigdecimal::BigDecimal;
-use scylla::{prepared_statement::PreparedStatement, transport::errors::QueryError, IntoTypedRows};
+use scylla::{prepared_statement::PreparedStatement, transport::errors::QueryError, IntoTypedRows, QueryResult};
 use tonic::async_trait;
 
 use crate::storage::ScyllaContext;
@@ -12,7 +12,9 @@ use super::{UserDto, UserRepository};
 pub struct ScyllaUserRepository {
     scylla_context: Arc<ScyllaContext>,
     statement_insert: PreparedStatement,
+    statement_find_id: PreparedStatement,
     statement_find_phone: PreparedStatement,
+    statement_find_email: PreparedStatement,
 }
 
 impl ScyllaUserRepository {
@@ -23,9 +25,22 @@ impl ScyllaUserRepository {
                 phone,
                 email,
                 login,
+                avatar,
                 balance
-            ) values (?, ?, ?, ?, ?)
+            ) values (?, ?, ?, ?, ?, ?)
             if not exists
+        ", &scylla_context.keyspace)).await?;
+
+        let statement_find_id = scylla_context.session.prepare(format!("
+            select
+                id,
+                phone,
+                email,
+                login,
+                avatar,
+                balance
+            from {}.users 
+            where id = ?
         ", &scylla_context.keyspace)).await?;
 
         let statement_find_phone = scylla_context.session.prepare(format!("
@@ -34,15 +49,30 @@ impl ScyllaUserRepository {
                 phone,
                 email,
                 login,
+                avatar,
                 balance
             from {}.users 
             where phone = ?
         ", &scylla_context.keyspace)).await?;
 
+        let statement_find_email = scylla_context.session.prepare(format!("
+            select
+                id,
+                phone,
+                email,
+                login,
+                avatar,
+                balance
+            from {}.users 
+            where email = ?
+        ", &scylla_context.keyspace)).await?;
+
         let result = Self {
             scylla_context,
             statement_insert,   
+            statement_find_id,
             statement_find_phone,
+            statement_find_email,
         };
 
         Ok(result)
@@ -57,6 +87,7 @@ impl UserRepository for ScyllaUserRepository {
             &dto.phone,
             &dto.email,
             &dto.login,
+            &dto.avatar,
             &dto.balance,
         )).await?;
 
@@ -67,10 +98,19 @@ impl UserRepository for ScyllaUserRepository {
             Option<HashMap<String, BigDecimal>>, 
             Option<String>, 
             Option<String>, 
+            Option<String>, 
             Option<i64>,
         )>().next().unwrap();
-        let (success, _, _, _, _, _) = row?;
+        let (success, ..) = row?;
         Ok(success)
+    }
+
+    async fn find_id(&self, id: i64) -> Result<Option<UserDto>, Box<dyn Error>> {
+        let result = self.scylla_context.session.execute(&self.statement_find_id, (
+            id, 
+        )).await?;
+
+        map_user_dto(result)
     }
 
     async fn find_phone(&self, phone: i64) -> Result<Option<UserDto>, Box<dyn Error>> {
@@ -78,19 +118,37 @@ impl UserRepository for ScyllaUserRepository {
             phone, 
         )).await?;
 
-        if let Some(rows) = result.rows {
-            if let Some(row) = rows.into_typed::<(i64, i64, String, String, Option<HashMap<String, BigDecimal>>)>().next() {
-                let (id, phone, email, login, balance) = row?;
-                return Ok(Some(UserDto { 
-                    id, 
-                    phone, 
-                    email, 
-                    login, 
-                    balance: balance.unwrap_or(HashMap::new()),
-                }))
-            }
-        }
-
-        Ok(None)
+        map_user_dto(result)
     }
+
+    async fn find_email(&self, email: &String) -> Result<Option<UserDto>, Box<dyn Error>> {
+        let result = self.scylla_context.session.execute(&self.statement_find_email, (
+            email, 
+        )).await?;
+
+        map_user_dto(result)
+    }
+}
+
+fn map_user_dto(result: QueryResult) -> Result<Option<UserDto>, Box<dyn Error>> {
+    let mapped = result.maybe_first_row_typed::<(
+        i64, 
+        i64, 
+        String, 
+        String, 
+        String, 
+        Option<HashMap<String, BigDecimal>>,
+    )>()?.map(|row| {
+        let (id, phone, email, login, avatar, balance) = row;
+        UserDto { 
+            id, 
+            phone, 
+            email, 
+            login, 
+            avatar,
+            balance: balance.unwrap_or(HashMap::new()),
+        }
+    });
+
+    Ok(mapped)
 }
