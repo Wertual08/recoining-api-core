@@ -60,7 +60,7 @@ impl UserTokenRepository for ScyllaUserTokenRepository {
         )).await?;
 
         let rows = result.rows.unwrap(); 
-        let row = rows.into_typed::<(i32,)>().next().unwrap();
+        let row = rows.into_typed::<(i64,)>().next().unwrap();
         let (success, ) = row?;
         Ok(success > 0)
     }

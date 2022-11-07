@@ -4,9 +4,12 @@ package api_core.auth;
 
 service Auth {
     rpc SendCodePhone(SendCodePhoneRequest) returns (SendCodePhoneResponse);
-    // rpc SendCodeEmail(SendCodeEmailRequest) returns (SendCodeEmailResponse);
     rpc SignInPhone(SignInPhoneRequest) returns (SignInPhoneResponse);
+    
+    // rpc SendCodeEmail(SendCodeEmailRequest) returns (SendCodeEmailResponse);
     // rpc SignInEmail(SignInEmailRequest) returns (SignInEmailResponse);
+
+    rpc CreateGenericAccessToken(CreateGenericAccessTokenRequest) returns (CreateGenericAccessTokenResponse);
 }
 
 
@@ -45,6 +48,15 @@ message SignInEmailRequest {
 
 message SignInEmailResponse {
     SignInResultResource result = 1;
+}
+
+
+message CreateGenericAccessTokenRequest {
+}
+
+message CreateGenericAccessTokenResponse {
+    string token = 1;
+    int64 expires_at = 2;
 }
 
 

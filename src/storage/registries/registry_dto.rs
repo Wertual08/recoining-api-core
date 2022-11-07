@@ -8,3 +8,5 @@ pub struct RegistryDto {
     pub name: String,
     pub image: String,
 }
+
+pub const REGISTRY_DIRECT: i16 = 1;

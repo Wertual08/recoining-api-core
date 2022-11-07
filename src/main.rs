@@ -6,6 +6,7 @@ mod domain;
 mod migrations;
 
 use std::sync::Arc;
+use std::time::Duration;
 
 use config::Config;
 use grpc::{AuthGrpcService, AuthServer};
@@ -55,6 +56,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Running server...");
     Server::builder()
+        .http2_keepalive_interval(Some(Duration::from_secs(4)))
+        .http2_keepalive_timeout(Some(Duration::from_secs(1)))
         .add_service(AuthServer::new(auth))
         .add_service(UsersServer::new(users))
         .serve(config.server.host.parse().unwrap())

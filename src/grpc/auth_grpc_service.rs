@@ -19,7 +19,7 @@ use tonic::{Request, Response, Status};
 
 use crate::{domain::{ServiceFactory, codes::{CodeSendModel, CodeAttemptModel}}, logging::{StatusResult, Logger}};
 
-use self::api_auth::{SendCodePhoneResponse, SendCodePhoneRequest, SendCodeResultResource, send_code_result_resource, sign_in_result_resource::{Fail, Absent, Retry}};
+use self::api_auth::{SendCodePhoneResponse, SendCodePhoneRequest, SendCodeResultResource, send_code_result_resource, sign_in_result_resource::{Fail, Absent, Retry}, CreateGenericAccessTokenRequest, CreateGenericAccessTokenResponse};
 
 #[derive(Debug)]
 pub struct AuthGrpcService {
@@ -112,7 +112,6 @@ impl Auth for AuthGrpcService {
 
                     let (access_token, access_expires_at) = token_service
                         .create_access(id)
-                        .await
                         .consume_error(&self.logger)?;
 
                     Payload::Success(Success {
@@ -144,5 +143,43 @@ impl Auth for AuthGrpcService {
                 }
             )
         )
+    }
+
+    async fn create_generic_access_token(
+        &self, 
+        request: Request<CreateGenericAccessTokenRequest>
+    ) -> Result<Response<CreateGenericAccessTokenResponse>, Status> {
+        if let Some(auth_metadata) = request.metadata().get("authorization") {
+            if let Ok(str) = auth_metadata.to_str() {
+                if let Some(token) = str.strip_prefix("Bearer ") {
+                    let token_service = self.service_factory.token();
+                    
+                    if let Some(user_id) = token_service.find_refresh(token).await.consume_error(&self.logger)? {
+                        let (token, expires_at) = token_service.create_access(user_id).consume_error(&self.logger)?;
+
+                        Ok(
+                            Response::new(
+                                CreateGenericAccessTokenResponse { 
+                                    token,
+                                    expires_at,
+                                }
+                            )
+                        )
+                    }
+                    else {
+                        Err(Status::unauthenticated("Token does not exists"))
+                    }
+                }
+                else {
+                    Err(Status::unauthenticated("Token type must be Bearer"))
+                }
+            }
+            else {
+                Err(Status::unauthenticated("Invalid authorization header format"))
+            }
+        }
+        else {
+            Err(Status::unauthenticated("No authorization was present"))
+        }
     }
 }

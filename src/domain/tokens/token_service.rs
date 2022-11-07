@@ -44,7 +44,7 @@ impl TokenService {
         Ok((token, expires_at))
     }
 
-    pub async fn create_access(&self, user_id: i64) -> Result<(String, i64), Box<dyn Error>> {
+    pub fn create_access(&self, user_id: i64) -> Result<(String, i64), Box<dyn Error>> {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("Time went backwards")
@@ -70,7 +70,7 @@ impl TokenService {
         Ok((token, expires_at))
     }
 
-    pub async fn find_refresh(&self, token: &String) -> Result<Option<i64>, Box<dyn Error>> {
+    pub async fn find_refresh(&self, token: &str) -> Result<Option<i64>, Box<dyn Error>> {
         let parts: Vec<&str> = token.split(':').collect();
         if parts.len() != 2 {
             return Ok(None)
