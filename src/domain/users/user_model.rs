@@ -9,7 +9,7 @@ pub struct UserModel {
     pub phone: i64,
     pub email: String,
     pub login: String,
-    pub avatar: String,
+    pub image: String,
     pub balance: HashMap<String, BigDecimal>,
 }
 
@@ -20,7 +20,7 @@ impl From<UserDto> for UserModel {
             phone: user_dto.phone,
             email: user_dto.email,
             login: user_dto.login,
-            avatar: user_dto.avatar,
+            image: user_dto.image,
             balance: user_dto.balance,
         }
     }

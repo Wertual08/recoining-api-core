@@ -10,12 +10,10 @@ create table recoining.users (
     phone bigint,
     email text,
     login text,
-    avatar text,
+    image text,
     balance map<text, decimal>
 );
-
 create index on recoining.users(phone);
-
 create index on recoining.users(email);
 
 create table recoining.phone_codes (
@@ -36,34 +34,52 @@ create table recoining.user_tokens (
     user_id bigint,
     id text,
     primary key (user_id, id)
-);
+) with clustering order by (id asc);
 
 create table recoining.registries (
     id bigint primary key,
-    current_batch bigint,
-    current_sequence bigint
+    current_pack bigint,
+    current_sequence smallint,
+    name text,
+    image text,
+    variant smallint,
+    created_at bigint,
+    updated_at bigint
 );
+
+create table recoining.registry_users (
+    registry_id bigint,
+    user_id bigint,
+    updated_at bigint,
+    current_pack bigint,
+    current_sequence smallint,
+    balance map<text, decimal>,
+    primary key (registry_id, user_id)
+);
+
+create materialized view recoining.user_registries
+as select 
+    user_id, 
+    registry_id, 
+    updated_at
+from recoining.registry_users
+where user_id is not null
+and updated_at is not null
+primary key (user_id, updated_at, registry_id)
+with clustering order by (updated_at desc);
 
 create table recoining.transactions (
     registry_id bigint,
     pack bigint,
     sequence smallint,
     created_at bigint,
-    type smallint,
+    source_user_id bigint,
+    target_user_id bigint,
+    variant smallint,
     amount decimal,
     currency text,
     label text,
     description text,
     hash blob,
-    state tinyint,
     primary key ((registry_id, pack), sequence)
-);
-
-create table recoining.user_registries (
-    user_id bigint,
-    registry_id bigint,
-    balance map<text, decimal>,
-    primary key (user_id, registry_id)
-);
-
-create index on recoining.user_registries(registry_id);
+) with clustering order by (sequence desc);

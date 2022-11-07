@@ -83,7 +83,7 @@ impl From<UserModel> for UserResource {
             phone: model.phone,
             email: model.email,
             login: model.login,
-            avatar: model.avatar,
+            image: model.image,
             balance,
         }
     }

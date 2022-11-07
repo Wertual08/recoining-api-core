@@ -1,7 +1,7 @@
 use std::{sync::Arc, error::Error, collections::HashMap};
 
 use bigdecimal::BigDecimal;
-use scylla::{prepared_statement::PreparedStatement, transport::errors::QueryError, IntoTypedRows, QueryResult};
+use scylla::{prepared_statement::PreparedStatement, transport::errors::QueryError, QueryResult};
 use tonic::async_trait;
 
 use crate::storage::ScyllaContext;
@@ -25,7 +25,7 @@ impl ScyllaUserRepository {
                 phone,
                 email,
                 login,
-                avatar,
+                image,
                 balance
             ) values (?, ?, ?, ?, ?, ?)
             if not exists
@@ -37,7 +37,7 @@ impl ScyllaUserRepository {
                 phone,
                 email,
                 login,
-                avatar,
+                image,
                 balance
             from {}.users 
             where id = ?
@@ -49,7 +49,7 @@ impl ScyllaUserRepository {
                 phone,
                 email,
                 login,
-                avatar,
+                image,
                 balance
             from {}.users 
             where phone = ?
@@ -61,7 +61,7 @@ impl ScyllaUserRepository {
                 phone,
                 email,
                 login,
-                avatar,
+                image,
                 balance
             from {}.users 
             where email = ?
@@ -87,22 +87,11 @@ impl UserRepository for ScyllaUserRepository {
             &dto.phone,
             &dto.email,
             &dto.login,
-            &dto.avatar,
+            &dto.image,
             &dto.balance,
         )).await?;
 
-        let rows = result.rows.unwrap(); 
-        let row = rows.into_typed::<(
-            bool, 
-            Option<i64>, 
-            Option<HashMap<String, BigDecimal>>, 
-            Option<String>, 
-            Option<String>, 
-            Option<String>, 
-            Option<i64>,
-        )>().next().unwrap();
-        let (success, ..) = row?;
-        Ok(success)
+        Ok(result.single_row()?.columns[0].as_ref().unwrap().as_boolean().unwrap())
     }
 
     async fn find_id(&self, id: i64) -> Result<Option<UserDto>, Box<dyn Error>> {
@@ -139,13 +128,13 @@ fn map_user_dto(result: QueryResult) -> Result<Option<UserDto>, Box<dyn Error>> 
         String, 
         Option<HashMap<String, BigDecimal>>,
     )>()?.map(|row| {
-        let (id, phone, email, login, avatar, balance) = row;
+        let (id, phone, email, login, image, balance) = row;
         UserDto { 
             id, 
             phone, 
             email, 
             login, 
-            avatar,
+            image,
             balance: balance.unwrap_or(HashMap::new()),
         }
     });

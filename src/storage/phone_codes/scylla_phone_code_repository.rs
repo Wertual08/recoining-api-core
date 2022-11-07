@@ -64,15 +64,7 @@ impl PhoneCodeRepository for ScyllaPhoneCodeRepository {
             dto.ttl,
         )).await?;
 
-        let (success, ..) = result.single_row_typed::<(
-            bool, 
-            Option<i64>, 
-            Option<i16>, 
-            Option<i64>, 
-            Option<i64>,
-        )>()?;
-
-        Ok(success)
+        Ok(result.single_row()?.columns[0].as_ref().unwrap().as_boolean().unwrap())
     }
 
     async fn delete(&self, dto: &PhoneCodeDto) -> Result<bool, Box<dyn Error>> {
@@ -81,9 +73,7 @@ impl PhoneCodeRepository for ScyllaPhoneCodeRepository {
             dto.attempts,
         )).await?;
 
-        let (success, ..) = result.single_row_typed::<(bool, Option<i16>)>()?;
-        
-        Ok(success)
+        Ok(result.single_row()?.columns[0].as_ref().unwrap().as_boolean().unwrap())
     }
 
     async fn find(&self, phone: i64) -> Result<Option<PhoneCodeDto>, Box<dyn Error>> {
