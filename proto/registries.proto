@@ -11,6 +11,8 @@ service Registries {
 
 message CreateDirectRequest {
     int64 user_id = 1;
+    string name = 2;
+    string image = 3;
 }
 
 message CreateResponse {
@@ -24,7 +26,7 @@ message CreateResponse {
 }
 
 
-message FindRequest {
+message FindRequest { 
     int64 id = 1;
 }
 
@@ -39,7 +41,12 @@ message RegistryResource {
     int64 updated_at = 3;
     int64 current_pack = 4;
     int32 current_sequence = 5;
-    int32 variant = 6;
+    RegistryVariantResource variant = 6;
     string name = 7;
     string image = 8;
+}
+
+enum RegistryVariantResource {
+    INVALID = 0;
+    DIRECT = 1;
 }

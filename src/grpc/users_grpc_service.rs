@@ -8,9 +8,11 @@ use tonic::{Request, Response, Status};
 
 use std::{sync::Arc, collections::HashMap};
 
-use crate::{domain::{ServiceFactory, users::UserModel}, logging::{Logger, StatusResult}};
+use crate::{domain::{ServiceFactory, users::UserModel}, logging::Logger};
 
 use self::api_users::{users_server::Users, FindIdRequest, FindResponse, FindPhoneRequest, FindEmailRequest, UserResource};
+
+use super::extensions::StatusResult;
 
 
 #[derive(Debug)]

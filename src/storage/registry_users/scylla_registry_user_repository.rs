@@ -11,6 +11,7 @@ pub struct ScyllaRegistryUserRepository {
     statement_create: PreparedStatement,
     statement_update: PreparedStatement,
     statement_list: PreparedStatement,
+    statement_count: PreparedStatement,
 }
 
 impl ScyllaRegistryUserRepository {
@@ -52,11 +53,19 @@ impl ScyllaRegistryUserRepository {
             and user_id in ?
         ", &scylla_context.keyspace)).await?;
 
+        let statement_count = scylla_context.session.prepare(format!("
+            select count(1)
+            from {}.registry_users
+            where registry_id = ?
+            and user_id in ?
+        ", &scylla_context.keyspace)).await?;
+
         let result = Self {
             scylla_context,
             statement_create,
             statement_update,
             statement_list,    
+            statement_count,
         };
 
         Ok(result)
@@ -143,5 +152,15 @@ impl RegistryUserRepository for ScyllaRegistryUserRepository {
         }
 
         Ok(Vec::new())
+    }
+
+    async fn count(&self, registry_id: i64, user_ids: &[i64]) -> Result<i64, Box<dyn Error>> {
+        let result = self.scylla_context.session.execute(&self.statement_count, (
+            registry_id,
+            user_ids, 
+        )).await?;
+
+        let (count, ) = result.single_row_typed::<(i64,)>()?;
+        Ok(count)
     }
 }

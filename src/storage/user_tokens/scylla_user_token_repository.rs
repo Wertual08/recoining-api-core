@@ -1,6 +1,6 @@
 use std::{sync::Arc, error::Error};
 
-use scylla::{prepared_statement::PreparedStatement, transport::errors::QueryError, IntoTypedRows};
+use scylla::{prepared_statement::PreparedStatement, transport::errors::QueryError};
 use tonic::async_trait;
 
 use crate::storage::ScyllaContext;
@@ -25,7 +25,7 @@ impl ScyllaUserTokenRepository {
         ", &scylla_context.keyspace)).await?;
 
         let statement_exists = scylla_context.session.prepare(format!("
-            select count(*)
+            select count(1)
             from {}.user_tokens
             where user_id = ?
             and id = ?
@@ -59,9 +59,8 @@ impl UserTokenRepository for ScyllaUserTokenRepository {
             &dto.id, 
         )).await?;
 
-        let rows = result.rows.unwrap(); 
-        let row = rows.into_typed::<(i64,)>().next().unwrap();
-        let (success, ) = row?;
-        Ok(success > 0)
+        let (count, ) = result.single_row_typed::<(i64,)>()?;
+
+        Ok(count > 0)
     }
 }

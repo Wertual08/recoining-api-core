@@ -4,7 +4,7 @@ use jsonwebtoken::{encode, Header, Algorithm, EncodingKey, decode, Validation, D
 
 use crate::storage::user_tokens::{UserTokenRepository, UserTokenDto};
 
-use super::{TokenModel, TokensState};
+use super::{AccessTokenModel, TokensState};
 
 pub struct TokenService {
     state: Arc<TokensState>,
@@ -52,7 +52,7 @@ impl TokenService {
 
         let expires_at = now + self.state.access_lifetime;
 
-        let claims = TokenModel {
+        let claims = AccessTokenModel {
             sub: user_id,
             exp: expires_at,
             iat: now,
@@ -95,8 +95,8 @@ impl TokenService {
         Ok(None)
     }
 
-    pub fn decode_access(&self, token: &str) -> Result<Option<TokenModel>, Box<dyn Error>> {
-        let result = decode::<TokenModel>(
+    pub fn decode_access(&self, token: &str) -> Result<Option<AccessTokenModel>, Box<dyn Error>> {
+        let result = decode::<AccessTokenModel>(
             token, 
             &DecodingKey::from_ec_pem(self.state.jwt_public_key.as_bytes())?,
             &Validation::new(Algorithm::ES384)
@@ -104,7 +104,7 @@ impl TokenService {
 
         match result {
             Ok(model) => Ok(Some(model.claims)),
-            Err(_) => Ok(None)
+            Err(err) => Ok(None)
         }
     }
 }

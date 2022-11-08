@@ -14,7 +14,7 @@ use storage::RepositoryFactory;
 use tonic::transport::Server;
 
 use crate::domain::ServiceFactory;
-use crate::grpc::{UsersGrpcService, UsersServer};
+use crate::grpc::{UsersGrpcService, UsersServer, RegistriesGrpcService, RegistriesServer};
 use crate::logging::Logger;
 use crate::storage::ScyllaContext;
 use crate::migrations::migrate;
@@ -52,6 +52,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Arc::clone(&logger),
         Arc::clone(&service_factory),
     );
+    let registries = RegistriesGrpcService::new(
+        Arc::clone(&logger),
+        Arc::clone(&service_factory),
+    );
     println!(" DONE");
 
     println!("Running server...");
@@ -60,6 +64,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .http2_keepalive_timeout(Some(Duration::from_secs(1)))
         .add_service(AuthServer::new(auth))
         .add_service(UsersServer::new(users))
+        .add_service(RegistriesServer::new(registries))
         .serve(config.server.host.parse().unwrap())
         .await?;
 

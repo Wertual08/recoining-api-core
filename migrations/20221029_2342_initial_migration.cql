@@ -55,7 +55,7 @@ create table recoining.registry_users (
     current_sequence smallint,
     balance map<text, decimal>,
     primary key (registry_id, user_id)
-);
+) with clustering order by (user_id asc);
 
 create materialized view recoining.user_registries
 as select 

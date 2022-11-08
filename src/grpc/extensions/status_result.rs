@@ -2,7 +2,7 @@ use std::error::Error;
 
 use tonic::Status;
 
-use super::Logger;
+use crate::logging::Logger;
 
 pub trait StatusResult<T> {
     fn consume_error(self, logger: &Logger) -> Result<T, Status>;

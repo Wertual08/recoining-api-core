@@ -17,9 +17,11 @@ use api_auth::{
 };
 use tonic::{Request, Response, Status};
 
-use crate::{domain::{ServiceFactory, codes::{CodeSendModel, CodeAttemptModel}}, logging::{StatusResult, Logger}};
+use crate::{domain::{ServiceFactory, codes::{CodeSendModel, CodeAttemptModel}}, logging::Logger};
 
 use self::api_auth::{SendCodePhoneResponse, SendCodePhoneRequest, SendCodeResultResource, send_code_result_resource, sign_in_result_resource::{Fail, Absent, Retry}, CreateGenericAccessTokenRequest, CreateGenericAccessTokenResponse};
+
+use super::extensions::StatusResult;
 
 #[derive(Debug)]
 pub struct AuthGrpcService {
@@ -151,7 +153,7 @@ impl Auth for AuthGrpcService {
     ) -> Result<Response<CreateGenericAccessTokenResponse>, Status> {
         if let Some(auth_metadata) = request.metadata().get("authorization") {
             if let Ok(str) = auth_metadata.to_str() {
-                if let Some(token) = str.strip_prefix("Bearer ") {
+                if let Some(token) = str.strip_prefix("refresh ") {
                     let token_service = self.service_factory.token();
                     
                     if let Some(user_id) = token_service.find_refresh(token).await.consume_error(&self.logger)? {
@@ -171,7 +173,7 @@ impl Auth for AuthGrpcService {
                     }
                 }
                 else {
-                    Err(Status::unauthenticated("Token type must be Bearer"))
+                    Err(Status::unauthenticated("Invalid token type"))
                 }
             }
             else {

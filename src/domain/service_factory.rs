@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::storage::{RepositoryFactory, id_generator::IdGenerator};
 
-use super::{codes::CodeService, users::UserService, tokens::{TokenService, TokensState}, ServicesConfig};
+use super::{codes::CodeService, users::UserService, tokens::{TokenService, TokensState}, ServicesConfig, registries::RegistryService};
 
 #[derive(Debug)]
 pub struct ServiceFactory {
@@ -55,6 +55,15 @@ impl ServiceFactory {
         TokenService::new(
             Arc::clone(&self.tokens_state),
             self.repository_factory.user_token(),    
+        )  
+    }
+
+    pub fn registry(&self) -> RegistryService {
+        RegistryService::new(
+            Arc::clone(&self.id_generator),
+            self.repository_factory.registry(),    
+            self.repository_factory.registry_user(),    
+            self.repository_factory.user_registry(),    
         )  
     }
 }

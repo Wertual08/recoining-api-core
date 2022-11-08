@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize)]
-pub struct TokenModel {
+pub struct AccessTokenModel {
     pub sub: i64,                       // Optional. Subject (whom token refers to)
     pub exp: i64,                       // Required (validate_exp defaults to true in validation). Expiration time (as UTC timestamp)
     pub iat: i64,                       // Optional. Issued at (as UTC timestamp)

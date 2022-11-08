@@ -10,3 +10,16 @@ pub struct RegistryUserDto {
     pub current_sequence: i16,
     pub balance: HashMap<String, BigDecimal>,
 }
+
+impl RegistryUserDto {
+    pub fn new(registry_id: i64, user_id: i64) -> Self {
+        Self {
+            registry_id,
+            user_id,
+            updated_at: -1,
+            current_pack: 0,
+            current_sequence: -1,
+            balance: HashMap::new(),
+        }
+    }
+}
