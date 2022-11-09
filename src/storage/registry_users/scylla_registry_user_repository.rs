@@ -81,9 +81,9 @@ impl RegistryUserRepository for ScyllaRegistryUserRepository {
         for dto in dtos {
             batch.append_statement(self.statement_create.clone());
             args.push((
-                dto.updated_at,
                 dto.registry_id,
                 dto.user_id,
+                dto.updated_at,
                 dto.current_pack,
                 dto.current_sequence,
                 &dto.balance,

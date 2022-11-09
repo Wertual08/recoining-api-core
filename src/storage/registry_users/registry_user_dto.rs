@@ -12,11 +12,11 @@ pub struct RegistryUserDto {
 }
 
 impl RegistryUserDto {
-    pub fn new(registry_id: i64, user_id: i64) -> Self {
+    pub fn new(timestamp: i64, registry_id: i64, user_id: i64) -> Self {
         Self {
             registry_id,
             user_id,
-            updated_at: -1,
+            updated_at: timestamp,
             current_pack: 0,
             current_sequence: -1,
             balance: HashMap::new(),

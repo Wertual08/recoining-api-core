@@ -1,6 +1,11 @@
-use std::{sync::{Arc, Mutex}, error::Error};
+use std::{sync::{Arc, Mutex}, error::Error, time::{SystemTime, UNIX_EPOCH}};
 
-use crate::storage::{registries::RegistryRepository, id_generator::IdGenerator, registry_users::{RegistryUserDto, RegistryUserRepository}, user_registries::UserRegistryRepository};
+use crate::storage::{
+    registries::RegistryRepository, 
+    id_generator::IdGenerator, 
+    registry_users::{RegistryUserDto, RegistryUserRepository}, 
+    user_registries::UserRegistryRepository,
+};
 
 use super::RegistryModel;
 
@@ -33,15 +38,21 @@ impl RegistryService {
         name: String,
         image: String,
     ) -> Result<Option<RegistryModel>, Box<dyn Error>> {
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_millis() as i64;
+
         let registry = RegistryModel::direct(
+            timestamp,
             self.id_generator.lock().unwrap().create(), 
             name, 
             image,
         );
 
         let registry_users = [
-            RegistryUserDto::new(registry.id, former_user_id),
-            RegistryUserDto::new(registry.id, second_user_id),
+            RegistryUserDto::new(timestamp, registry.id, former_user_id),
+            RegistryUserDto::new(timestamp, registry.id, second_user_id),
         ];
 
         if !self.registry_repository.create(&registry.clone().into()).await? {
@@ -62,6 +73,25 @@ impl RegistryService {
 
     pub async fn find(&self, id: i64) -> Result<Option<RegistryModel>, Box<dyn Error>> {
         let registry = self.registry_repository.find(id).await?;
-        Ok(registry.map(|model| model.into()))
+        Ok(registry.map(|dto| dto.into()))
+    }
+
+    pub async fn list_user_registries(
+        &self,
+        user_id: i64, 
+        last_updated_at: i64, 
+        limit: i32,
+    ) -> Result<Vec<RegistryModel>, Box<dyn Error>> {
+        let user_registries = self.user_registry_repository.list(
+            user_id, 
+            last_updated_at, 
+            limit,
+        ).await?;
+
+        let registries = self.registry_repository.list(
+            &user_registries.iter().map(|dto| dto.registry_id).collect::<Vec<i64>>()
+        ).await?;
+
+        Ok(registries.into_iter().map(|dto| dto.into()).collect())
     }
 }

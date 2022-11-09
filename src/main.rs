@@ -14,7 +14,7 @@ use storage::RepositoryFactory;
 use tonic::transport::Server;
 
 use crate::domain::ServiceFactory;
-use crate::grpc::{UsersGrpcService, UsersServer, RegistriesGrpcService, RegistriesServer};
+use crate::grpc::{UsersGrpcService, UsersServer, RegistriesGrpcService, RegistriesServer, ProfileGrpcService, ProfileServer};
 use crate::logging::Logger;
 use crate::storage::ScyllaContext;
 use crate::migrations::migrate;
@@ -56,6 +56,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Arc::clone(&logger),
         Arc::clone(&service_factory),
     );
+    let profile = ProfileGrpcService::new(
+        Arc::clone(&logger),
+        Arc::clone(&service_factory),
+    );
     println!(" DONE");
 
     println!("Running server...");
@@ -65,6 +69,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_service(AuthServer::new(auth))
         .add_service(UsersServer::new(users))
         .add_service(RegistriesServer::new(registries))
+        .add_service(ProfileServer::new(profile))
         .serve(config.server.host.parse().unwrap())
         .await?;
 

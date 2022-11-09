@@ -1,5 +1,3 @@
-use std::time::{UNIX_EPOCH, SystemTime};
-
 use crate::storage::registries::RegistryDto;
 
 use super::RegistryVariantModel;
@@ -17,14 +15,11 @@ pub struct RegistryModel {
 }
 
 impl RegistryModel {
-    pub fn direct(id: i64, name: String, image: String) -> Self {
+    pub fn direct(timestamp: i64, id: i64, name: String, image: String) -> Self {
         Self {
             id,
-            created_at: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("Time went backwards")
-                .as_millis() as i64,
-            updated_at: -1,
+            created_at: timestamp,
+            updated_at: timestamp,
             current_pack: 0,
             variant: RegistryVariantModel::Direct,
             current_sequence: -1,

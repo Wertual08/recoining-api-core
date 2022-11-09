@@ -73,14 +73,6 @@ impl Registries for RegistriesGrpcService {
         let registry_option = registry_service.find(registry_id).await.consume_error(&self.logger)?;
 
         if let Some(model) = registry_option {
-
-        }
-        else {
-            return Err(Status::not_found("Registry not found"));
-        }
-        let registry_option = registry_service.find(registry_id).await.consume_error(&self.logger)?;
-
-        if let Some(model) = registry_option {
             Ok(Response::new(FindResponse {
                 registry: Some(model.into()),
             }))
