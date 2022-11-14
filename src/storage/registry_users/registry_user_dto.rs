@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use bigdecimal::BigDecimal;
 
+
 pub struct RegistryUserDto {
     pub registry_id: i64,
     pub user_id: i64,

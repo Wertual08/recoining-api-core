@@ -27,6 +27,10 @@ impl CodeService {
     }
 
     pub async fn send_phone(&self, phone: i64) -> Result<CodeSendModel, Box<dyn Error>> {
+        if phone <= 0 {
+            return Ok(CodeSendModel::Fail);
+        }
+
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()

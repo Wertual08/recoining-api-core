@@ -104,7 +104,7 @@ impl TokenService {
 
         match result {
             Ok(model) => Ok(Some(model.claims)),
-            Err(err) => Ok(None)
+            Err(_) => Ok(None)
         }
     }
 }

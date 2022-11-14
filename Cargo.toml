@@ -19,6 +19,7 @@ bigdecimal = "0.2.0"
 uuid = { version = "1.2.1", features = ["v4"] }
 base64-url = "1.4.13"
 jsonwebtoken = { version = "8.1.1" } 
+sha2 = "0.10.6"
 
 scylla = "0.6.1"
 

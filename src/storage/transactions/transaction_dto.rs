@@ -14,5 +14,3 @@ pub struct TransactionDto {
     pub description: String,
     pub hash: Vec<u8>,
 }
-
-pub const TRANSACTION_BASIC: i16 = 1;

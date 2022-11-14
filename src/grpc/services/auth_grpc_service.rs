@@ -19,7 +19,15 @@ use tonic::{Request, Response, Status};
 
 use crate::{domain::{ServiceFactory, codes::{CodeSendModel, CodeAttemptModel}}, logging::Logger};
 
-use self::api_auth::{SendCodePhoneResponse, SendCodePhoneRequest, SendCodeResultResource, send_code_result_resource, sign_in_result_resource::{Fail, Absent, Retry}, CreateGenericAccessTokenRequest, CreateGenericAccessTokenResponse};
+use self::api_auth::{
+    SendCodePhoneResponse, 
+    SendCodePhoneRequest, 
+    SendCodeResultResource, 
+    send_code_result_resource, 
+    sign_in_result_resource::{Fail, Absent, Retry}, 
+    CreateGenericAccessTokenRequest, 
+    CreateGenericAccessTokenResponse,
+};
 
 use super::extensions::StatusResult;
 

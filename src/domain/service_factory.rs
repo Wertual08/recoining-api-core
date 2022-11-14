@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::storage::{RepositoryFactory, id_generator::IdGenerator};
 
-use super::{codes::CodeService, users::UserService, tokens::{TokenService, TokensState}, ServicesConfig, registries::RegistryService};
+use super::{codes::CodeService, users::UserService, tokens::{TokenService, TokensState}, ServicesConfig, registries::RegistryService, registry_users::RegistryUserService, transactions::TransactionService};
 
 #[derive(Debug)]
 pub struct ServiceFactory {
@@ -65,5 +65,19 @@ impl ServiceFactory {
             self.repository_factory.registry_user(),    
             self.repository_factory.user_registry(),    
         )  
+    }
+
+    pub fn registry_user(&self) -> RegistryUserService {
+        RegistryUserService::new(
+            self.repository_factory.registry_user(), 
+        )  
+    }
+
+    pub fn transaction(&self) -> TransactionService {
+        TransactionService::new(
+            self.repository_factory.transaction(),
+            self.repository_factory.registry(),
+            self.repository_factory.registry_user(),
+        )
     }
 }

@@ -2,9 +2,7 @@ use std::{env, fs::File, error::Error};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{storage::ScyllaConfig, domain::ServicesConfig};
-
-use super::ServerConfig;
+use crate::{storage::ScyllaConfig, domain::ServicesConfig, grpc::ServerConfig};
 
 #[derive(Serialize, Deserialize)]
 pub struct Config {

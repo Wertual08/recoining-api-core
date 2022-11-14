@@ -105,9 +105,11 @@ impl RegistryUserRepository for ScyllaRegistryUserRepository {
                 dto.updated_at,
                 dto.current_pack,
                 dto.current_sequence,
+                &dto.currency,
                 &dto.target_value,
                 dto.registry_id,
                 dto.user_id,
+                &dto.currency,
                 &dto.source_value,
             ));
         }
