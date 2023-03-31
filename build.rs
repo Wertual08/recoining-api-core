@@ -4,10 +4,10 @@ fn main() {
         .build_server(true)
         .compile(&[
             "proto/auth.proto",
-            "profile.proto",
-            "registries.proto",
-            "transactions.proto",
-            "users.proto",
+            "proto/profile.proto",
+            "proto/registries.proto",
+            "proto/transactions.proto",
+            "proto/users.proto",
         ], &[
             "proto"
         ])
