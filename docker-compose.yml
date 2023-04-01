@@ -1,0 +1,17 @@
+version: '3.5'
+
+networks:
+  recoining-api-network:
+    external: true
+
+services:
+  recoining-api-core:
+    container_name: recoining-api-core
+    build:
+      context: .
+    networks:
+      - recoining-api-network
+    volumes:
+      - ./config:/usr/local/bin/config
+
+
